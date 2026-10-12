@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthProvider';
+import { SnackbarProvider } from './context/SnackbarContext';
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './features/home/HomePage';
 import { HistoryPage } from './features/history/HistoryPage';
@@ -66,7 +67,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <SnackbarProvider>
+          <AppRoutes />
+        </SnackbarProvider>
       </AuthProvider>
     </BrowserRouter>
   );

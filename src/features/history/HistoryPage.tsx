@@ -1,19 +1,303 @@
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../auth/AuthProvider';
 import { en } from '../../i18n/en';
 import { Card } from '../../components/ui/Card';
+import { useExpenses, useMembers, useCategories, useExpenseMutations, type ExpenseWithSplits } from '../../hooks/useData';
+import { useSnackbar } from '../../context/SnackbarContext';
+import { formatPaise } from '../../lib/money';
+import { ExpenseDetailModal } from './ExpenseDetailModal';
+import { AddExpenseModal } from '../expenses/AddExpenseModal';
+
+type FilterType = 'all' | 'mine' | 'month';
+
+function formatDateHeader(dateStr: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterday = d.toISOString().slice(0, 10);
+
+  if (dateStr === today) return 'Today';
+  if (dateStr === yesterday) return 'Yesterday';
+
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const year = parts[0];
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const dateObj = new Date(parseInt(year, 10), month, day);
+    return dateObj.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+  return dateStr;
+}
 
 export function HistoryPage() {
-  return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-[var(--text)]">
-        {en.historyTitle}
-      </h1>
+  const { member } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterMemberId = searchParams.get('member');
 
-      {/* Empty state */}
-      <Card>
-        <p className="text-lg text-[var(--muted)] text-center">
-          {en.historyEmpty}
-        </p>
-      </Card>
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseWithSplits | null>(null);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+
+  const { members } = useMembers();
+  const { categories } = useCategories();
+  const { expenses, loading, refetch } = useExpenses(showDeleted);
+  const { createExpense, softDeleteExpense, restoreExpense } = useExpenseMutations(() => {
+    refetch();
+  });
+  const { showSavedWithUndo } = useSnackbar();
+
+  const handleSavedWithUndo = (expenseId: string) => {
+    showSavedWithUndo(async () => {
+      await softDeleteExpense(expenseId);
+    });
+  };
+
+  const currentMonthPrefix = useMemo(() => {
+    return new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+  }, []);
+
+  // Filter expenses
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((exp) => {
+      // 1. Deleted filter
+      if (!showDeleted && exp.deleted_at) return false;
+      if (showDeleted && !exp.deleted_at) return false;
+
+      // 2. Member filter from query params if present
+      if (filterMemberId) {
+        const isPayer = exp.paid_by === filterMemberId;
+        const isInSplit = exp.splits.some((s) => s.member_id === filterMemberId);
+        if (!isPayer && !isInSplit) return false;
+      }
+
+      // 3. Category filter
+      if (selectedCategoryId !== 'all' && exp.category_id !== selectedCategoryId) {
+        return false;
+      }
+
+      // 4. Time/Ownership filter chips
+      if (activeFilter === 'mine') {
+        const isMyExpense = exp.paid_by === member?.id || exp.created_by === member?.id;
+        if (!isMyExpense) return false;
+      } else if (activeFilter === 'month') {
+        if (!exp.expense_date.startsWith(currentMonthPrefix)) return false;
+      }
+
+      return true;
+    });
+  }, [expenses, showDeleted, filterMemberId, selectedCategoryId, activeFilter, member, currentMonthPrefix]);
+
+  // Group by date
+  const groupedExpenses = useMemo(() => {
+    const map = new Map<string, ExpenseWithSplits[]>();
+    for (const exp of filteredExpenses) {
+      const dateKey = exp.expense_date;
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+      }
+      map.get(dateKey)!.push(exp);
+    }
+    return Array.from(map.entries());
+  }, [filteredExpenses]);
+
+  const activeFilteredMemberName = members.find((m) => m.id === filterMemberId)?.name;
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Page Title & Add Button */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-[var(--text)]">
+          {en.historyTitle}
+        </h1>
+        <button
+          onClick={() => setIsAddExpenseOpen(true)}
+          className="min-h-[48px] px-4 py-2 bg-[var(--primary)] text-white text-base font-bold rounded-xl hover:bg-[#0a5555] transition-colors"
+          aria-label={en.homeAddExpense}
+        >
+          + {en.homeAddExpense}
+        </button>
+      </div>
+
+      {/* Member filter banner if filtered by URL */}
+      {filterMemberId && activeFilteredMemberName && (
+        <div className="flex items-center justify-between p-3 bg-teal-50 border border-teal-200 rounded-xl">
+          <span className="text-base font-semibold text-[var(--primary)]">
+            Showing with {activeFilteredMemberName}
+          </span>
+          <button
+            onClick={() => setSearchParams({})}
+            className="min-h-[36px] px-2 text-base font-bold text-[var(--muted)] hover:text-[var(--text)]"
+            aria-label="Clear member filter"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Filter Chips: All · Mine · This month */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setActiveFilter('all')}
+          className={`min-h-[48px] flex-1 px-3 py-2 rounded-xl text-base font-semibold border-2 transition-colors ${
+            activeFilter === 'all'
+              ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
+              : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)]'
+          }`}
+        >
+          {en.historyFilterAll}
+        </button>
+        <button
+          onClick={() => setActiveFilter('mine')}
+          className={`min-h-[48px] flex-1 px-3 py-2 rounded-xl text-base font-semibold border-2 transition-colors ${
+            activeFilter === 'mine'
+              ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
+              : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)]'
+          }`}
+        >
+          {en.historyFilterMine}
+        </button>
+        <button
+          onClick={() => setActiveFilter('month')}
+          className={`min-h-[48px] flex-1 px-3 py-2 rounded-xl text-base font-semibold border-2 transition-colors ${
+            activeFilter === 'month'
+              ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
+              : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)]'
+          }`}
+        >
+          {en.historyFilterThisMonth}
+        </button>
+      </div>
+
+      {/* Category selector + Show Deleted toggle */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <select
+          value={selectedCategoryId}
+          onChange={(e) => setSelectedCategoryId(e.target.value)}
+          className="min-h-[48px] px-3 py-2 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl text-base font-semibold text-[var(--text)] focus:border-[var(--primary)] focus:outline-none flex-1"
+          aria-label="Filter by category"
+        >
+          <option value="all">All categories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
+        <button
+          type="button"
+          onClick={() => setShowDeleted((prev) => !prev)}
+          className={`min-h-[48px] px-4 py-2 rounded-xl text-base font-semibold border-2 transition-colors ${
+            showDeleted
+              ? 'bg-[var(--owe)] text-white border-[var(--owe)]'
+              : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)]'
+          }`}
+        >
+          {showDeleted ? en.historyHideDeleted : en.historyShowDeleted}
+        </button>
+      </div>
+
+      {/* Expenses Feed */}
+      {loading && (
+        <Card>
+          <p className="text-lg text-[var(--muted)] text-center">Loading expenses...</p>
+        </Card>
+      )}
+
+      {!loading && groupedExpenses.length === 0 && (
+        <Card>
+          <p className="text-lg text-[var(--muted)] text-center">
+            {en.historyEmpty}
+          </p>
+        </Card>
+      )}
+
+      {!loading &&
+        groupedExpenses.map(([dateKey, items]) => (
+          <div key={dateKey} className="space-y-3">
+            {/* Date Group Heading */}
+            <h2 className="text-lg font-bold text-[var(--muted)] px-1">
+              {formatDateHeader(dateKey)}
+            </h2>
+
+            {/* Expenses on this date */}
+            <div className="space-y-2">
+              {items.map((exp) => {
+                const payerName = members.find((m) => m.id === exp.paid_by)?.name ?? 'Member';
+                const creatorName = members.find((m) => m.id === exp.created_by)?.name ?? 'Member';
+                const categoryName = exp.category?.name ?? 'Expense';
+
+                return (
+                  <Card
+                    key={exp.id}
+                    onClick={() => setSelectedExpense(exp)}
+                    className="cursor-pointer hover:border-[var(--primary)] transition-colors !p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-bold text-[var(--text)]">
+                          {exp.title}
+                        </h3>
+                        <p className="text-sm font-semibold text-[var(--muted)] mt-1">
+                          {categoryName} · {en.historyPaidBy.replace('{{name}}', payerName)} · {en.historyAddedBy.replace('{{name}}', creatorName)}
+                        </p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <p className="text-xl font-bold text-[var(--text)]">
+                          ₹{formatPaise(exp.amount_paise)}
+                        </p>
+                        {exp.deleted_at && (
+                          <span className="text-sm font-bold text-[var(--owe)]">
+                            Deleted
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+      {/* Detail Modal */}
+      {selectedExpense && (
+        <ExpenseDetailModal
+          expense={selectedExpense}
+          onClose={() => setSelectedExpense(null)}
+          members={members}
+          onDelete={async (id) => {
+            await softDeleteExpense(id);
+            refetch();
+          }}
+          onRestore={async (id) => {
+            await restoreExpense(id);
+            refetch();
+          }}
+        />
+      )}
+
+      {/* Add Expense Modal */}
+      {isAddExpenseOpen && member && (
+        <AddExpenseModal
+          isOpen={isAddExpenseOpen}
+          onClose={() => setIsAddExpenseOpen(false)}
+          members={members}
+          categories={categories}
+          currentMemberId={member.id}
+          onSave={createExpense}
+          onSavedWithUndo={handleSavedWithUndo}
+        />
+      )}
     </div>
   );
 }
