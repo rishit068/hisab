@@ -226,6 +226,60 @@ export function useExpenseMutations(onSuccess?: () => void) {
     return expenseId;
   };
 
+  const updateExpense = async (
+    expenseId: string,
+    input: {
+      title: string;
+      amount_paise: number;
+      paid_by: string;
+      category_id: string | null;
+      expense_date: string;
+      note?: string | null;
+      splits: { member_id: string; share_paise: number }[];
+    }
+  ) => {
+    if (!member) throw new Error('Not authenticated');
+
+    // 1. Update expense row
+    const { error: expErr } = await supabase
+      .from('expenses')
+      .update({
+        title: input.title,
+        amount_paise: input.amount_paise,
+        paid_by: input.paid_by,
+        category_id: input.category_id,
+        expense_date: input.expense_date,
+        note: input.note || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', expenseId);
+
+    if (expErr) throw expErr;
+
+    // 2. Replace splits
+    const { error: delErr } = await supabase
+      .from('expense_splits')
+      .delete()
+      .eq('expense_id', expenseId);
+
+    if (delErr) throw delErr;
+
+    const splitsPayload = input.splits.map((s) => ({
+      expense_id: expenseId,
+      member_id: s.member_id,
+      share_paise: s.share_paise,
+    }));
+
+    const { error: splitsErr } = await supabase
+      .from('expense_splits')
+      .insert(splitsPayload);
+
+    if (splitsErr) throw splitsErr;
+
+    onSuccess?.();
+    return expenseId;
+  };
+
   const softDeleteExpense = async (expenseId: string) => {
     if (!member) throw new Error('Not authenticated');
 
@@ -277,6 +331,7 @@ export function useExpenseMutations(onSuccess?: () => void) {
 
   return {
     createExpense,
+    updateExpense,
     softDeleteExpense,
     restoreExpense,
     createSettlement,

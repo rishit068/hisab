@@ -10,6 +10,7 @@ interface ExpenseDetailModalProps {
   expense: ExpenseWithSplits | null;
   onClose: () => void;
   members: Member[];
+  onEdit?: (expense: ExpenseWithSplits) => void;
   onDelete: (id: string) => Promise<void>;
   onRestore: (id: string) => Promise<void>;
 }
@@ -18,6 +19,7 @@ export function ExpenseDetailModal({
   expense,
   onClose,
   members,
+  onEdit,
   onDelete,
   onRestore,
 }: ExpenseDetailModalProps) {
@@ -126,13 +128,27 @@ export function ExpenseDetailModal({
         <div className="flex flex-col gap-3 pt-2 border-t border-[var(--border)]">
           {!isDeleted ? (
             !confirmDelete ? (
-              <Button
-                variant="danger"
-                onClick={() => setConfirmDelete(true)}
-                aria-label={en.detailDelete}
-              >
-                {en.detailDelete}
-              </Button>
+              <div className="flex flex-col gap-2">
+                {onEdit && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      onClose();
+                      onEdit(expense);
+                    }}
+                    aria-label={en.detailEdit}
+                  >
+                    {en.detailEdit}
+                  </Button>
+                )}
+                <Button
+                  variant="danger"
+                  onClick={() => setConfirmDelete(true)}
+                  aria-label={en.detailDelete}
+                >
+                  {en.detailDelete}
+                </Button>
+              </div>
             ) : (
               <div className="p-3 bg-red-50 rounded-xl border border-red-200">
                 <p className="text-base font-semibold text-[var(--owe)] mb-3 text-center">

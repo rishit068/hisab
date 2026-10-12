@@ -9,6 +9,7 @@ import { useRealtime } from '../../hooks/useRealtime';
 import { formatPaise } from '../../lib/money';
 import { ExpenseDetailModal } from './ExpenseDetailModal';
 import { AddExpenseModal } from '../expenses/AddExpenseModal';
+import { EditExpenseModal } from '../expenses/EditExpenseModal';
 
 type FilterType = 'all' | 'mine' | 'month';
 
@@ -45,6 +46,7 @@ export function HistoryPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('all');
   const [showDeleted, setShowDeleted] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithSplits | null>(null);
+  const [editingExpense, setEditingExpense] = useState<ExpenseWithSplits | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
   const { members, refetch: refetchMembers } = useMembers();
@@ -58,7 +60,7 @@ export function HistoryPage() {
       refetchCategories();
     },
   });
-  const { createExpense, softDeleteExpense, restoreExpense } = useExpenseMutations(() => {
+  const { createExpense, updateExpense, softDeleteExpense, restoreExpense } = useExpenseMutations(() => {
     refetch();
   });
   const { showSavedWithUndo } = useSnackbar();
@@ -284,6 +286,7 @@ export function HistoryPage() {
           expense={selectedExpense}
           onClose={() => setSelectedExpense(null)}
           members={members}
+          onEdit={(exp) => setEditingExpense(exp)}
           onDelete={async (id) => {
             await softDeleteExpense(id);
             refetch();
@@ -291,6 +294,22 @@ export function HistoryPage() {
           onRestore={async (id) => {
             await restoreExpense(id);
             refetch();
+          }}
+        />
+      )}
+
+      {/* Edit Expense Modal */}
+      {editingExpense && (
+        <EditExpenseModal
+          isOpen={Boolean(editingExpense)}
+          expense={editingExpense}
+          onClose={() => setEditingExpense(null)}
+          members={members}
+          categories={categories}
+          onSave={async (id, data) => {
+            const res = await updateExpense(id, data);
+            refetch();
+            return res;
           }}
         />
       )}
