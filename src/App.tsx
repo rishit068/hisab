@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthProvider';
 import { SnackbarProvider } from './context/SnackbarContext';
+import { TextSizeProvider } from './context/TextSizeContext';
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './features/home/HomePage';
 import { HistoryPage } from './features/history/HistoryPage';
@@ -66,11 +67,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <SnackbarProvider>
-          <AppRoutes />
-        </SnackbarProvider>
-      </AuthProvider>
+      <TextSizeProvider>
+        <AuthProvider>
+          <SnackbarProvider>
+            <AppRoutes />
+          </SnackbarProvider>
+        </AuthProvider>
+      </TextSizeProvider>
     </BrowserRouter>
   );
 }

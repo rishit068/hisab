@@ -5,6 +5,7 @@ import { en } from '../../i18n/en';
 import { Card } from '../../components/ui/Card';
 import { useExpenses, useMembers, useCategories, useExpenseMutations, type ExpenseWithSplits } from '../../hooks/useData';
 import { useSnackbar } from '../../context/SnackbarContext';
+import { useRealtime } from '../../hooks/useRealtime';
 import { formatPaise } from '../../lib/money';
 import { ExpenseDetailModal } from './ExpenseDetailModal';
 import { AddExpenseModal } from '../expenses/AddExpenseModal';
@@ -46,9 +47,17 @@ export function HistoryPage() {
   const [selectedExpense, setSelectedExpense] = useState<ExpenseWithSplits | null>(null);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
-  const { members } = useMembers();
-  const { categories } = useCategories();
+  const { members, refetch: refetchMembers } = useMembers();
+  const { categories, refetch: refetchCategories } = useCategories();
   const { expenses, loading, refetch } = useExpenses(showDeleted);
+
+  useRealtime({
+    onDataChange: () => {
+      refetch();
+      refetchMembers();
+      refetchCategories();
+    },
+  });
   const { createExpense, softDeleteExpense, restoreExpense } = useExpenseMutations(() => {
     refetch();
   });

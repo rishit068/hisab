@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useMembers, useCategories, useExpenses, useSettlements, useBalances, useExpenseMutations } from '../../hooks/useData';
 import { useSnackbar } from '../../context/SnackbarContext';
+import { useRealtime } from '../../hooks/useRealtime';
 import { formatPaise } from '../../lib/money';
 import { AddExpenseModal } from '../expenses/AddExpenseModal';
 import { SettleUpModal } from '../settlements/SettleUpModal';
@@ -15,10 +16,20 @@ export function HomePage() {
   const navigate = useNavigate();
   const { showSavedWithUndo } = useSnackbar();
 
-  const { members, loading: loadingMembers } = useMembers();
-  const { categories } = useCategories();
+  const { members, loading: loadingMembers, refetch: refetchMembers } = useMembers();
+  const { categories, refetch: refetchCategories } = useCategories();
   const { expenses, loading: loadingExpenses, refetch: refetchExpenses } = useExpenses();
   const { settlements, loading: loadingSettlements, refetch: refetchSettlements } = useSettlements();
+
+  // Multi-device realtime subscription (§9)
+  useRealtime({
+    onDataChange: () => {
+      refetchExpenses();
+      refetchSettlements();
+      refetchMembers();
+      refetchCategories();
+    },
+  });
 
   const { createExpense, softDeleteExpense, createSettlement } = useExpenseMutations(() => {
     refetchExpenses();
