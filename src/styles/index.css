@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+/*
+ * Hisaab design tokens from ANTIGRAVITY_SPEC.md §8
+ * "calm, trustworthy, bank-grade, not childish"
+ */
+:root {
+  --bg: #FAF8F4;
+  --surface: #FFFFFF;
+  --text: #12263A;
+  --muted: #4A5A6A;
+  --primary: #0F6B6B;
+  --owe: #A63D2F;
+  --get: #1B7A4B;
+  --border: #D9D4CA;
+
+  font-family: 'Atkinson Hyperlegible', Inter, system-ui, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+/* Respect OS text-size preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Global focus ring for keyboard accessibility */
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Ensure minimum text size */
+body {
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Text size settings (per device, via class on <html>) */
+html.text-large {
+  font-size: 22px;
+}
+
+html.text-extra-large {
+  font-size: 26px;
+}
