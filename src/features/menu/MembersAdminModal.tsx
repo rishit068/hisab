@@ -115,16 +115,24 @@ export function MembersAdminModal({ onClose }: MembersAdminModalProps) {
     if (!renamingId || !renameValue.trim()) return;
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from('members')
-        .update({ name: renameValue.trim() })
-        .eq('id', renamingId);
+      const { error } = await (supabase.rpc as any)('rename_member', {
+        p_member_id: renamingId,
+        p_new_name: renameValue.trim(),
+      });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback to direct update if RPC is not yet created
+        const { error: directErr } = await supabase
+          .from('members')
+          .update({ name: renameValue.trim() })
+          .eq('id', renamingId);
+        if (directErr) throw error;
+      }
+
       setRenamingId(null);
       await fetchData();
-    } catch {
-      showSnackbar(en.errorGeneric);
+    } catch (e: any) {
+      showSnackbar(e?.message || en.errorGeneric);
     } finally {
       setBusy(false);
     }
