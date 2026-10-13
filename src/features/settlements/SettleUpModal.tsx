@@ -31,8 +31,12 @@ export function SettleUpModal({
 }: SettleUpModalProps) {
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
+  const nonAdminMembers = useMemo(() => {
+    return members.filter((m) => !m.is_admin);
+  }, [members]);
+
   const [targetMemberId, setTargetMemberId] = useState<string>(() => {
-    return initialTargetMemberId || members[0]?.id || '';
+    return initialTargetMemberId || nonAdminMembers[0]?.id || '';
   });
 
   const [amountStr, setAmountStr] = useState<string>(() => {
@@ -111,7 +115,7 @@ export function SettleUpModal({
               Who did you pay?
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {members.map((m) => {
+              {nonAdminMembers.map((m) => {
                 const isSelected = targetMemberId === m.id;
                 return (
                   <button

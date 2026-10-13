@@ -36,9 +36,22 @@ export function AddExpenseModal({
   const [amountStr, setAmountStr] = useState('');
   const [title, setTitle] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [paidBy, setPaidBy] = useState<string>(currentMemberId);
+
+  // Eligible members for splitting expenses: only non-admin members
+  const splitMembers = useMemo(() => {
+    return members.filter((m) => !m.is_admin);
+  }, [members]);
+
+  // Default payer: current member if non-admin, else the first non-admin member
+  const defaultPayerId = useMemo(() => {
+    const isCurrentAdmin = members.find((m) => m.id === currentMemberId)?.is_admin;
+    if (!isCurrentAdmin) return currentMemberId;
+    return splitMembers[0]?.id || currentMemberId;
+  }, [members, currentMemberId, splitMembers]);
+
+  const [paidBy, setPaidBy] = useState<string>(defaultPayerId);
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(
-    () => new Set(members.map((m) => m.id))
+    () => new Set(splitMembers.map((m) => m.id))
   );
   const [isCustomSplit, setIsCustomSplit] = useState(false);
   const [customSharesStr, setCustomSharesStr] = useState<Record<string, string>>({});
@@ -48,10 +61,10 @@ export function AddExpenseModal({
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Sorted members for deterministic allocation
+  // Sorted non-admin members for deterministic allocation
   const sortedMembers = useMemo(() => {
-    return [...members].sort((a, b) => a.name.localeCompare(b.name));
-  }, [members]);
+    return [...splitMembers].sort((a, b) => a.name.localeCompare(b.name));
+  }, [splitMembers]);
 
   const amountPaise = useMemo(() => {
     const parsed = parseToPaise(amountStr);
@@ -249,8 +262,9 @@ export function AddExpenseModal({
             <label className="block text-lg font-bold text-[var(--text)] mb-2">
               {en.addExpenseWhoPaid}
             </label>
+            {/* Who paid? Only non-admin participants */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {members.map((m) => {
+              {splitMembers.map((m) => {
                 const isPayer = paidBy === m.id;
                 return (
                   <button

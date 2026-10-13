@@ -62,9 +62,14 @@ export function EditExpenseModal({
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const sortedMembers = useMemo(() => {
-    return [...members].sort((a, b) => a.name.localeCompare(b.name));
+  // Eligible members for splitting: only non-admin members
+  const splitMembers = useMemo(() => {
+    return members.filter((m) => !m.is_admin);
   }, [members]);
+
+  const sortedMembers = useMemo(() => {
+    return [...splitMembers].sort((a, b) => a.name.localeCompare(b.name));
+  }, [splitMembers]);
 
   const amountPaise = useMemo(() => {
     const parsed = parseToPaise(amountStr);
@@ -248,7 +253,7 @@ export function EditExpenseModal({
               {en.addExpenseWhoPaid}
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {sortedMembers.map((m) => {
+              {splitMembers.map((m) => {
                 const isSelected = paidBy === m.id;
                 return (
                   <button

@@ -36,7 +36,9 @@ export function HomePage() {
     refetchSettlements();
   });
 
-  const { overallNetPaise, pairwise } = useBalances(members, expenses, settlements);
+  // Pass members filtered so admin is not shown as a split peer
+  const splitMembers = members.filter((m) => !m.is_admin);
+  const { overallNetPaise, pairwise } = useBalances(splitMembers, expenses, settlements);
 
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [settleUpTarget, setSettleUpTarget] = useState<{ memberId: string; amountPaise: number } | null>(null);
