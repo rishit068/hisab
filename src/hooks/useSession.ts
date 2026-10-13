@@ -14,10 +14,12 @@ interface SessionState {
 
 export function useSession() {
   const cachedMember = getCachedCurrentMember();
+  // If we have a cached member, resolve immediately (no loading spinner).
+  // The network call below will run in the background and update state.
   const [state, setState] = useState<SessionState>({
     session: null,
     member: cachedMember,
-    isLoading: true,
+    isLoading: cachedMember === null, // only show loading if we have no cached data
     isAdmin: cachedMember?.is_admin ?? false,
     error: null,
   });
@@ -44,9 +46,12 @@ export function useSession() {
   }, []);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session — resolves from Supabase's local storage cache
+    // immediately when offline (no network call needed for the session token itself).
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        // Try to fetch fresh member data from server.
+        // If offline, fetchMember returns null and we fall back to cache.
         const fetchedMember = await fetchMember(session.user.id);
         const resolvedMember = fetchedMember || getCachedCurrentMember();
         if (fetchedMember) {
@@ -60,14 +65,27 @@ export function useSession() {
           error: null,
         });
       } else {
-        setState({
-          session: null,
-          member: null,
-          isLoading: false,
-          isAdmin: false,
-          error: null,
-        });
+        // No active session — redirect to welcome only if no cached member either
+        const cached = getCachedCurrentMember();
+        if (cached) {
+          // Edge case: session expired but cache exists — still mark done
+          setState((prev) => ({ ...prev, isLoading: false }));
+        } else {
+          setState({
+            session: null,
+            member: null,
+            isLoading: false,
+            isAdmin: false,
+            error: null,
+          });
+        }
       }
+    }).catch(() => {
+      // getSession itself threw (extreme offline scenario) — use cache
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+      }));
     });
 
     // Listen for auth changes
