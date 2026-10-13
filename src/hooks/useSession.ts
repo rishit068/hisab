@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { Member } from '../types/database';
+import { getCachedCurrentMember, setCachedCurrentMember } from '../lib/offlineCache';
 
 interface SessionState {
   session: Session | null;
@@ -12,11 +13,12 @@ interface SessionState {
 }
 
 export function useSession() {
+  const cachedMember = getCachedCurrentMember();
   const [state, setState] = useState<SessionState>({
     session: null,
-    member: null,
+    member: cachedMember,
     isLoading: true,
-    isAdmin: false,
+    isAdmin: cachedMember?.is_admin ?? false,
     error: null,
   });
 
@@ -45,12 +47,16 @@ export function useSession() {
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        const member = await fetchMember(session.user.id);
+        const fetchedMember = await fetchMember(session.user.id);
+        const resolvedMember = fetchedMember || getCachedCurrentMember();
+        if (fetchedMember) {
+          setCachedCurrentMember(fetchedMember);
+        }
         setState({
           session,
-          member,
+          member: resolvedMember,
           isLoading: false,
-          isAdmin: member?.is_admin ?? false,
+          isAdmin: resolvedMember?.is_admin ?? false,
           error: null,
         });
       } else {
@@ -68,6 +74,7 @@ export function useSession() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
+          setCachedCurrentMember(null);
           setState({
             session: null,
             member: null,
@@ -79,12 +86,16 @@ export function useSession() {
         }
 
         if (session?.user) {
-          const member = await fetchMember(session.user.id);
+          const fetchedMember = await fetchMember(session.user.id);
+          const resolvedMember = fetchedMember || getCachedCurrentMember();
+          if (fetchedMember) {
+            setCachedCurrentMember(fetchedMember);
+          }
           setState({
             session,
-            member,
+            member: resolvedMember,
             isLoading: false,
-            isAdmin: member?.is_admin ?? false,
+            isAdmin: resolvedMember?.is_admin ?? false,
             error: null,
           });
         }
@@ -97,16 +108,21 @@ export function useSession() {
   }, [fetchMember]);
 
   const signOut = useCallback(async () => {
+    setCachedCurrentMember(null);
     await supabase.auth.signOut();
   }, []);
 
   const refreshMember = useCallback(async () => {
     if (state.session?.user) {
-      const member = await fetchMember(state.session.user.id);
+      const fetchedMember = await fetchMember(state.session.user.id);
+      const resolvedMember = fetchedMember || getCachedCurrentMember();
+      if (fetchedMember) {
+        setCachedCurrentMember(fetchedMember);
+      }
       setState((prev) => ({
         ...prev,
-        member,
-        isAdmin: member?.is_admin ?? false,
+        member: resolvedMember,
+        isAdmin: resolvedMember?.is_admin ?? false,
       }));
     }
   }, [state.session, fetchMember]);

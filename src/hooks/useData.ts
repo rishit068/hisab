@@ -13,6 +13,16 @@ import {
   pendingToSettlement,
   subscribeToQueueChanges,
 } from '../lib/offlineQueue';
+import {
+  getCachedMembers,
+  setCachedMembers,
+  getCachedCategories,
+  setCachedCategories,
+  getCachedExpenses,
+  setCachedExpenses,
+  getCachedSettlements,
+  setCachedSettlements,
+} from '../lib/offlineCache';
 
 export interface ExpenseWithSplits extends Expense {
   splits: ExpenseSplit[];
@@ -23,7 +33,7 @@ export interface ExpenseWithSplits extends Expense {
 }
 
 export function useMembers() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<Member[]>(() => getCachedMembers());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,9 +46,17 @@ export function useMembers() {
         .order('name', { ascending: true });
 
       if (err) throw err;
-      setMembers(data ?? []);
+      const fetched = data ?? [];
+      setCachedMembers(fetched);
+      setMembers(fetched);
     } catch (e: any) {
-      setError(e.message ?? 'Failed to load members');
+      // If offline, stay with cached data silently
+      const cached = getCachedMembers();
+      if (cached.length > 0) {
+        setMembers(cached);
+      } else {
+        setError(e.message ?? 'Failed to load members');
+      }
     } finally {
       setLoading(false);
     }
@@ -52,7 +70,7 @@ export function useMembers() {
 }
 
 export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(() => getCachedCategories());
   const [loading, setLoading] = useState(true);
 
   const fetchCategories = useCallback(async () => {
@@ -64,9 +82,15 @@ export function useCategories() {
         .order('sort', { ascending: true });
 
       if (err) throw err;
-      setCategories(data ?? []);
+      const fetched = data ?? [];
+      setCachedCategories(fetched);
+      setCategories(fetched);
     } catch {
-      // fallback
+      // If offline, stay with cached data silently
+      const cached = getCachedCategories();
+      if (cached.length > 0) {
+        setCategories(cached);
+      }
     } finally {
       setLoading(false);
     }
@@ -80,7 +104,9 @@ export function useCategories() {
 }
 
 export function useExpenses(includeDeleted = false) {
-  const [serverExpenses, setServerExpenses] = useState<ExpenseWithSplits[]>([]);
+  const [serverExpenses, setServerExpenses] = useState<ExpenseWithSplits[]>(() =>
+    includeDeleted ? [] : getCachedExpenses()
+  );
   const [pendingExpenses, setPendingExpenses] = useState(getPendingExpenses());
   const [loading, setLoading] = useState(true);
   const { categories } = useCategories();
@@ -117,6 +143,7 @@ export function useExpenses(includeDeleted = false) {
           ...e,
           splits: e.expense_splits ?? [],
         }));
+        if (!includeDeleted) setCachedExpenses(mapped);
         setServerExpenses(mapped);
       } else {
         const mapped: ExpenseWithSplits[] = (data ?? []).map((e: any) => ({
@@ -126,10 +153,18 @@ export function useExpenses(includeDeleted = false) {
           paid_by_member: e.paid_by_member ?? null,
           created_by_member: e.created_by_member ?? null,
         }));
+        if (!includeDeleted) setCachedExpenses(mapped);
         setServerExpenses(mapped);
       }
     } catch (e: any) {
       console.error('Failed to load expenses', e);
+      // If offline, stay with cached data
+      if (!includeDeleted) {
+        const cached = getCachedExpenses();
+        if (cached.length > 0) {
+          setServerExpenses(cached);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -154,7 +189,9 @@ export function useExpenses(includeDeleted = false) {
 }
 
 export function useSettlements(includeDeleted = false) {
-  const [serverSettlements, setServerSettlements] = useState<Settlement[]>([]);
+  const [serverSettlements, setServerSettlements] = useState<Settlement[]>(() =>
+    includeDeleted ? [] : getCachedSettlements()
+  );
   const [pendingSettlements, setPendingSettlements] = useState(getPendingSettlements());
   const [loading, setLoading] = useState(true);
 
@@ -179,9 +216,18 @@ export function useSettlements(includeDeleted = false) {
 
       const { data, error: err } = await query;
       if (err) throw err;
-      setServerSettlements(data ?? []);
+      const fetched = data ?? [];
+      if (!includeDeleted) setCachedSettlements(fetched);
+      setServerSettlements(fetched);
     } catch (e: any) {
       console.error('Failed to load settlements', e);
+      // If offline, stay with cached data
+      if (!includeDeleted) {
+        const cached = getCachedSettlements();
+        if (cached.length > 0) {
+          setServerSettlements(cached);
+        }
+      }
     } finally {
       setLoading(false);
     }
