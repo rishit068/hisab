@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#0F6B6B" />
+  <!-- Crisp Indian Rupee symbol styled in bold white -->
+  <path d="M160 140 H352 M160 196 H352 M160 140 V252 C210 252 268 252 268 196 M160 252 H248 C290 252 320 280 320 316 C320 355 285 372 248 372 M160 252 L312 400" 
+        stroke="#FFFFFF" 
+        stroke-width="40" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" 
+        fill="none" />
+</svg>
