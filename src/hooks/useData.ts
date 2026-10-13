@@ -3,12 +3,22 @@ import { supabase } from '../lib/supabase';
 import type { Member, Category, Expense, ExpenseSplit, Settlement } from '../types/database';
 import { useAuth } from '../features/auth/AuthProvider';
 import { calculateBalances, type UserBalancesSummary } from '../lib/balances';
+import {
+  getPendingExpenses,
+  getPendingSettlements,
+  queueOfflineExpense,
+  queueOfflineSettlement,
+  pendingToExpenseWithSplits,
+  pendingToSettlement,
+  subscribeToQueueChanges,
+} from '../lib/offlineQueue';
 
 export interface ExpenseWithSplits extends Expense {
   splits: ExpenseSplit[];
   category?: Category | null;
   paid_by_member?: Member | null;
   created_by_member?: Member | null;
+  is_pending?: boolean;
 }
 
 export function useMembers() {
@@ -69,8 +79,17 @@ export function useCategories() {
 }
 
 export function useExpenses(includeDeleted = false) {
-  const [expenses, setExpenses] = useState<ExpenseWithSplits[]>([]);
+  const [serverExpenses, setServerExpenses] = useState<ExpenseWithSplits[]>([]);
+  const [pendingExpenses, setPendingExpenses] = useState(getPendingExpenses());
   const [loading, setLoading] = useState(true);
+  const { categories } = useCategories();
+
+  // Listen to queue changes
+  useEffect(() => {
+    return subscribeToQueueChanges(() => {
+      setPendingExpenses(getPendingExpenses());
+    });
+  }, []);
 
   const fetchExpenses = useCallback(async () => {
     try {
@@ -97,7 +116,7 @@ export function useExpenses(includeDeleted = false) {
           ...e,
           splits: e.expense_splits ?? [],
         }));
-        setExpenses(mapped);
+        setServerExpenses(mapped);
       } else {
         const mapped: ExpenseWithSplits[] = (data ?? []).map((e: any) => ({
           ...e,
@@ -106,7 +125,7 @@ export function useExpenses(includeDeleted = false) {
           paid_by_member: e.paid_by_member ?? null,
           created_by_member: e.created_by_member ?? null,
         }));
-        setExpenses(mapped);
+        setServerExpenses(mapped);
       }
     } catch (e: any) {
       console.error('Failed to load expenses', e);
@@ -119,12 +138,31 @@ export function useExpenses(includeDeleted = false) {
     fetchExpenses();
   }, [fetchExpenses]);
 
+  // Combine server expenses and pending local expenses
+  const expenses = useMemo(() => {
+    const formattedPending = pendingExpenses.map((p) =>
+      pendingToExpenseWithSplits(p, categories)
+    );
+    // Pending items appear on top, followed by server items (filtering out any duplicates)
+    const serverIds = new Set(serverExpenses.map((s) => s.id));
+    const nonDuplicatedPending = formattedPending.filter((p) => !serverIds.has(p.id));
+    return [...nonDuplicatedPending, ...serverExpenses];
+  }, [serverExpenses, pendingExpenses, categories]);
+
   return { expenses, loading, refetch: fetchExpenses };
 }
 
 export function useSettlements(includeDeleted = false) {
-  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [serverSettlements, setServerSettlements] = useState<Settlement[]>([]);
+  const [pendingSettlements, setPendingSettlements] = useState(getPendingSettlements());
   const [loading, setLoading] = useState(true);
+
+  // Listen to queue changes
+  useEffect(() => {
+    return subscribeToQueueChanges(() => {
+      setPendingSettlements(getPendingSettlements());
+    });
+  }, []);
 
   const fetchSettlements = useCallback(async () => {
     try {
@@ -140,7 +178,7 @@ export function useSettlements(includeDeleted = false) {
 
       const { data, error: err } = await query;
       if (err) throw err;
-      setSettlements(data ?? []);
+      setServerSettlements(data ?? []);
     } catch (e: any) {
       console.error('Failed to load settlements', e);
     } finally {
@@ -151,6 +189,14 @@ export function useSettlements(includeDeleted = false) {
   useEffect(() => {
     fetchSettlements();
   }, [fetchSettlements]);
+
+  // Combine server settlements and pending settlements
+  const settlements = useMemo(() => {
+    const formattedPending = pendingSettlements.map((p) => pendingToSettlement(p));
+    const serverIds = new Set(serverSettlements.map((s) => s.id));
+    const nonDuplicatedPending = formattedPending.filter((p) => !serverIds.has(p.id));
+    return [...nonDuplicatedPending, ...serverSettlements];
+  }, [serverSettlements, pendingSettlements]);
 
   return { settlements, loading, refetch: fetchSettlements };
 }
@@ -190,10 +236,12 @@ export function useExpenseMutations(onSuccess?: () => void) {
   }) => {
     if (!member) throw new Error('Not authenticated');
 
-    // 1. Insert expense
-    const { data: expData, error: expErr } = await supabase
-      .from('expenses')
-      .insert({
+    const generatedId = crypto.randomUUID();
+
+    // If offline, queue locally immediately
+    if (!navigator.onLine) {
+      queueOfflineExpense({
+        id: generatedId,
         title: input.title,
         amount_paise: input.amount_paise,
         paid_by: input.paid_by,
@@ -201,29 +249,69 @@ export function useExpenseMutations(onSuccess?: () => void) {
         expense_date: input.expense_date,
         note: input.note || null,
         created_by: member.id,
-      })
-      .select('id')
-      .single();
+        created_at: new Date().toISOString(),
+        splits: input.splits,
+      });
+      onSuccess?.();
+      return generatedId;
+    }
 
-    if (expErr || !expData) throw expErr || new Error('Failed to create expense');
+    try {
+      // 1. Insert expense online
+      const { data: expData, error: expErr } = await supabase
+        .from('expenses')
+        .insert({
+          id: generatedId,
+          title: input.title,
+          amount_paise: input.amount_paise,
+          paid_by: input.paid_by,
+          category_id: input.category_id,
+          expense_date: input.expense_date,
+          note: input.note || null,
+          created_by: member.id,
+        })
+        .select('id')
+        .single();
 
-    const expenseId = expData.id;
+      if (expErr || !expData) throw expErr || new Error('Failed to create expense');
 
-    // 2. Insert splits
-    const splitsPayload = input.splits.map((s) => ({
-      expense_id: expenseId,
-      member_id: s.member_id,
-      share_paise: s.share_paise,
-    }));
+      const expenseId = expData.id;
 
-    const { error: splitsErr } = await supabase
-      .from('expense_splits')
-      .insert(splitsPayload);
+      // 2. Insert splits
+      const splitsPayload = input.splits.map((s) => ({
+        expense_id: expenseId,
+        member_id: s.member_id,
+        share_paise: s.share_paise,
+      }));
 
-    if (splitsErr) throw splitsErr;
+      const { error: splitsErr } = await supabase
+        .from('expense_splits')
+        .insert(splitsPayload);
 
-    onSuccess?.();
-    return expenseId;
+      if (splitsErr) throw splitsErr;
+
+      onSuccess?.();
+      return expenseId;
+    } catch (err: any) {
+      // Network failure fallback -> queue offline
+      if (!navigator.onLine || err?.message?.includes('fetch') || err?.message?.includes('network')) {
+        queueOfflineExpense({
+          id: generatedId,
+          title: input.title,
+          amount_paise: input.amount_paise,
+          paid_by: input.paid_by,
+          category_id: input.category_id,
+          expense_date: input.expense_date,
+          note: input.note || null,
+          created_by: member.id,
+          created_at: new Date().toISOString(),
+          splits: input.splits,
+        });
+        onSuccess?.();
+        return generatedId;
+      }
+      throw err;
+    }
   };
 
   const updateExpense = async (
@@ -316,17 +404,53 @@ export function useExpenseMutations(onSuccess?: () => void) {
   }) => {
     if (!member) throw new Error('Not authenticated');
 
-    const { error } = await supabase.from('settlements').insert({
-      from_member: member.id,
-      to_member: input.to_member,
-      amount_paise: input.amount_paise,
-      settled_on: input.settled_on,
-      note: input.note || null,
-      created_by: member.id,
-    });
+    const generatedId = crypto.randomUUID();
 
-    if (error) throw error;
-    onSuccess?.();
+    if (!navigator.onLine) {
+      queueOfflineSettlement({
+        id: generatedId,
+        from_member: member.id,
+        to_member: input.to_member,
+        amount_paise: input.amount_paise,
+        settled_on: input.settled_on,
+        note: input.note || null,
+        created_by: member.id,
+        created_at: new Date().toISOString(),
+      });
+      onSuccess?.();
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from('settlements').insert({
+        id: generatedId,
+        from_member: member.id,
+        to_member: input.to_member,
+        amount_paise: input.amount_paise,
+        settled_on: input.settled_on,
+        note: input.note || null,
+        created_by: member.id,
+      });
+
+      if (error) throw error;
+      onSuccess?.();
+    } catch (err: any) {
+      if (!navigator.onLine || err?.message?.includes('fetch') || err?.message?.includes('network')) {
+        queueOfflineSettlement({
+          id: generatedId,
+          from_member: member.id,
+          to_member: input.to_member,
+          amount_paise: input.amount_paise,
+          settled_on: input.settled_on,
+          note: input.note || null,
+          created_by: member.id,
+          created_at: new Date().toISOString(),
+        });
+        onSuccess?.();
+        return;
+      }
+      throw err;
+    }
   };
 
   return {

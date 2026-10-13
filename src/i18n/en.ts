@@ -129,7 +129,11 @@ export const en = {
   navMenu: 'Menu',
 
   // Offline
-  offlineBanner: 'No internet. You can view entries but not add new ones yet.',
+  offlineBanner: 'No internet. Entries will be saved on your phone and sent automatically when back online.',
+  offlineWaitingToSend: 'Waiting to send',
+  offlinePendingNotice: '{{count}} entry waiting to send when back online',
+  offlinePendingNoticePlural: '{{count}} entries waiting to send when back online',
+  offlineSentSuccess: 'Saved to group.',
 
   // Errors
   errorGeneric: 'Something went wrong. Please try again.',

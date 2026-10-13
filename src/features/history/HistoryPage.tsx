@@ -267,8 +267,13 @@ export function HistoryPage() {
                           ₹{formatPaise(exp.amount_paise)}
                         </p>
                         {exp.deleted_at && (
-                          <span className="text-sm font-bold text-[var(--owe)]">
+                          <span className="text-sm font-bold text-[var(--owe)] block">
                             Deleted
+                          </span>
+                        )}
+                        {exp.is_pending && (
+                          <span className="text-sm font-semibold text-[var(--owe)] bg-orange-50 px-2 py-0.5 rounded border border-orange-200 block mt-1">
+                            {en.offlineWaitingToSend}
                           </span>
                         )}
                       </div>
