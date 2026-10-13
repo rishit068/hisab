@@ -8,6 +8,7 @@ import {
   getPendingSettlements,
   queueOfflineExpense,
   queueOfflineSettlement,
+  removePendingExpense,
   pendingToExpenseWithSplits,
   pendingToSettlement,
   subscribeToQueueChanges,
@@ -252,7 +253,9 @@ export function useExpenseMutations(onSuccess?: () => void) {
         created_at: new Date().toISOString(),
         splits: input.splits,
       });
-      onSuccess?.();
+      try {
+        onSuccess?.();
+      } catch {}
       return generatedId;
     }
 
@@ -290,20 +293,18 @@ export function useExpenseMutations(onSuccess?: () => void) {
 
       if (splitsErr) throw splitsErr;
 
-      onSuccess?.();
+      try {
+        onSuccess?.();
+      } catch {}
       return expenseId;
     } catch (err: any) {
-      const errStr = String(err?.message || err || '').toLowerCase();
-      const isNetworkErr =
-        !navigator.onLine ||
-        errStr.includes('failed to fetch') ||
-        errStr.includes('fetch') ||
-        errStr.includes('network') ||
-        errStr.includes('typeerror') ||
-        err?.name === 'TypeError' ||
-        err?.name === 'NetworkError';
+      // Check if this was a known Postgres database constraint/schema error (e.g. invalid code)
+      const isPostgresConstraint = Boolean(
+        err?.code && typeof err.code === 'string' && /^[0-9A-Z]{5}$/.test(err.code)
+      );
 
-      if (isNetworkErr) {
+      // If it is NOT an explicit Postgres database constraint, treat it as a network/offline condition
+      if (!isPostgresConstraint) {
         queueOfflineExpense({
           id: generatedId,
           title: input.title,
@@ -316,7 +317,9 @@ export function useExpenseMutations(onSuccess?: () => void) {
           created_at: new Date().toISOString(),
           splits: input.splits,
         });
-        onSuccess?.();
+        try {
+          onSuccess?.();
+        } catch {}
         return generatedId;
       }
       throw err;
@@ -380,6 +383,15 @@ export function useExpenseMutations(onSuccess?: () => void) {
   const softDeleteExpense = async (expenseId: string) => {
     if (!member) throw new Error('Not authenticated');
 
+    const pending = getPendingExpenses();
+    if (pending.some((e) => e.id === expenseId)) {
+      removePendingExpense(expenseId);
+      try {
+        onSuccess?.();
+      } catch {}
+      return;
+    }
+
     const { error } = await supabase
       .from('expenses')
       .update({
@@ -389,7 +401,9 @@ export function useExpenseMutations(onSuccess?: () => void) {
       .eq('id', expenseId);
 
     if (error) throw error;
-    onSuccess?.();
+    try {
+      onSuccess?.();
+    } catch {}
   };
 
   const restoreExpense = async (expenseId: string) => {
@@ -402,7 +416,9 @@ export function useExpenseMutations(onSuccess?: () => void) {
       .eq('id', expenseId);
 
     if (error) throw error;
-    onSuccess?.();
+    try {
+      onSuccess?.();
+    } catch {}
   };
 
   const createSettlement = async (input: {
@@ -426,7 +442,9 @@ export function useExpenseMutations(onSuccess?: () => void) {
         created_by: member.id,
         created_at: new Date().toISOString(),
       });
-      onSuccess?.();
+      try {
+        onSuccess?.();
+      } catch {}
       return;
     }
 
@@ -442,19 +460,15 @@ export function useExpenseMutations(onSuccess?: () => void) {
       });
 
       if (error) throw error;
-      onSuccess?.();
+      try {
+        onSuccess?.();
+      } catch {}
     } catch (err: any) {
-      const errStr = String(err?.message || err || '').toLowerCase();
-      const isNetworkErr =
-        !navigator.onLine ||
-        errStr.includes('failed to fetch') ||
-        errStr.includes('fetch') ||
-        errStr.includes('network') ||
-        errStr.includes('typeerror') ||
-        err?.name === 'TypeError' ||
-        err?.name === 'NetworkError';
+      const isPostgresConstraint = Boolean(
+        err?.code && typeof err.code === 'string' && /^[0-9A-Z]{5}$/.test(err.code)
+      );
 
-      if (isNetworkErr) {
+      if (!isPostgresConstraint) {
         queueOfflineSettlement({
           id: generatedId,
           from_member: member.id,
@@ -465,7 +479,9 @@ export function useExpenseMutations(onSuccess?: () => void) {
           created_by: member.id,
           created_at: new Date().toISOString(),
         });
-        onSuccess?.();
+        try {
+          onSuccess?.();
+        } catch {}
         return;
       }
       throw err;
