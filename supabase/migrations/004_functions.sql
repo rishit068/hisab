@@ -41,13 +41,15 @@ BEGIN
     RAISE EXCEPTION 'This invite link is invalid, expired, or has already been used.';
   END IF;
 
-  -- Check device count (max 2)
-  SELECT COUNT(*) INTO v_device_count
-  FROM member_devices
-  WHERE member_devices.member_id = v_member_id;
+  -- Check device count (max 2 for non-admin members, unlimited for admins)
+  IF NOT v_member_is_admin THEN
+    SELECT COUNT(*) INTO v_device_count
+    FROM member_devices
+    WHERE member_devices.member_id = v_member_id;
 
-  IF v_device_count >= 2 THEN
-    RAISE EXCEPTION 'This person already has 2 devices linked. Please ask the admin to remove a device first.';
+    IF v_device_count >= 2 THEN
+      RAISE EXCEPTION 'This person already has 2 devices linked. Please ask the admin to remove a device first.';
+    END IF;
   END IF;
 
   -- Check if this auth user is already linked
