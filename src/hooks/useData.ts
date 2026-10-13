@@ -293,8 +293,17 @@ export function useExpenseMutations(onSuccess?: () => void) {
       onSuccess?.();
       return expenseId;
     } catch (err: any) {
-      // Network failure fallback -> queue offline
-      if (!navigator.onLine || err?.message?.includes('fetch') || err?.message?.includes('network')) {
+      const errStr = String(err?.message || err || '').toLowerCase();
+      const isNetworkErr =
+        !navigator.onLine ||
+        errStr.includes('failed to fetch') ||
+        errStr.includes('fetch') ||
+        errStr.includes('network') ||
+        errStr.includes('typeerror') ||
+        err?.name === 'TypeError' ||
+        err?.name === 'NetworkError';
+
+      if (isNetworkErr) {
         queueOfflineExpense({
           id: generatedId,
           title: input.title,
@@ -435,7 +444,17 @@ export function useExpenseMutations(onSuccess?: () => void) {
       if (error) throw error;
       onSuccess?.();
     } catch (err: any) {
-      if (!navigator.onLine || err?.message?.includes('fetch') || err?.message?.includes('network')) {
+      const errStr = String(err?.message || err || '').toLowerCase();
+      const isNetworkErr =
+        !navigator.onLine ||
+        errStr.includes('failed to fetch') ||
+        errStr.includes('fetch') ||
+        errStr.includes('network') ||
+        errStr.includes('typeerror') ||
+        err?.name === 'TypeError' ||
+        err?.name === 'NetworkError';
+
+      if (isNetworkErr) {
         queueOfflineSettlement({
           id: generatedId,
           from_member: member.id,

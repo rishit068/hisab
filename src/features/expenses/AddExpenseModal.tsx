@@ -159,7 +159,8 @@ export function AddExpenseModal({
       onSavedWithUndo(expenseId);
       onClose();
     } catch (e: any) {
-      setErrorMessage(e.message || en.errorGeneric);
+      setErrorMessage(e?.message || en.errorGeneric);
+      setIsReviewing(false);
       setSaving(false);
     }
   };
