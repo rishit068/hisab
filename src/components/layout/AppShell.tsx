@@ -4,7 +4,7 @@ import { OfflineBanner } from './OfflineBanner';
 
 export function AppShell() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FFF5ED] via-[#FAF8F4] to-[#F5ECE1] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{background: 'linear-gradient(165deg, #DFF0F0 0%, #EEF6F5 20%, #FAF8F4 55%, #F5EDE2 85%, #F0E4D4 100%)', backgroundAttachment: 'fixed'}}>
       <OfflineBanner />
       <IPhoneBanner />
       <main className="flex-1 pb-10 max-w-lg w-full mx-auto px-4 pt-3 sm:pt-4">

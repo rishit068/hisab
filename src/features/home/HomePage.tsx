@@ -195,43 +195,35 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 3. Action Buttons: 'Add' and 'History' only */}
+      {/* 3. Action Buttons: 'Add' and 'History' — elongated pill shape */}
       <section aria-label="Quick actions" className="animate-slide-up stagger-1">
-        <div className="flex justify-center items-center gap-12 sm:gap-16 py-1">
-          {/* 1. Add Expense */}
+        <div className="flex gap-3.5">
+          {/* Add Expense */}
           <button
             type="button"
             onClick={() => setIsAddExpenseOpen(true)}
-            className="flex flex-col items-center gap-2 group focus:outline-none"
+            className="flex-1 flex items-center justify-center gap-2.5 min-h-[60px] px-5 rounded-full bg-[var(--primary)] text-white shadow-md hover:bg-[var(--primary-hover)] hover:shadow-lg active:scale-[0.97] transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
             aria-label="Add expense"
           >
-            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-[var(--primary)] text-white flex items-center justify-center shadow-md group-hover:bg-[var(--primary-hover)] group-hover:shadow-lg group-active:scale-95 transition-all duration-150">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </div>
-            <span className="text-sm font-bold text-[var(--text)] group-hover:text-[var(--primary)]">
-              Add
-            </span>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span className="text-base font-bold tracking-tight">Add</span>
           </button>
 
-          {/* 2. History */}
+          {/* History */}
           <button
             type="button"
             onClick={() => navigate('/history')}
-            className="flex flex-col items-center gap-2 group focus:outline-none"
+            className="flex-1 flex items-center justify-center gap-2.5 min-h-[60px] px-5 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--border)] text-[var(--text)] shadow-sm hover:border-[var(--primary)] hover:text-[var(--primary)] active:scale-[0.97] transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
             aria-label="History"
           >
-            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-[var(--surface-raised)] border-2 border-[var(--border)] text-[var(--text)] flex items-center justify-center shadow-sm group-hover:border-[var(--primary)] group-hover:text-[var(--primary)] group-active:scale-95 transition-all duration-150">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-              </svg>
-            </div>
-            <span className="text-sm font-bold text-[var(--text)] group-hover:text-[var(--primary)]">
-              History
-            </span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span className="text-base font-bold tracking-tight">History</span>
           </button>
         </div>
       </section>
@@ -285,7 +277,7 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 5. People Section (Styled with highly rounded corners / shapes from reference photo) */}
+      {/* 5. People Section — single combined card with all names */}
       <section aria-labelledby="people-heading" className="animate-slide-up stagger-3 space-y-3 pt-1">
         <div className="flex items-center justify-between px-1">
           <h2 id="people-heading" className="text-lg sm:text-xl font-bold text-[var(--text)]">
@@ -293,23 +285,23 @@ export function HomePage() {
           </h2>
         </div>
 
-        <div className="space-y-3">
-          {isLoading && (
-            <Card className="!p-6 text-center rounded-[28px]">
-              <p className="text-base text-[var(--muted)] font-semibold">Loading people...</p>
-            </Card>
-          )}
+        {isLoading && (
+          <Card className="!p-6 text-center rounded-[28px]">
+            <p className="text-base text-[var(--muted)] font-semibold">Loading people...</p>
+          </Card>
+        )}
 
-          {!isLoading && pairwise.length === 0 && (
-            <Card className="!p-6 text-center rounded-[28px]">
-              <p className="text-base text-[var(--muted)] font-semibold">
-                {en.homeNoExpenses}
-              </p>
-            </Card>
-          )}
+        {!isLoading && pairwise.length === 0 && (
+          <Card className="!p-6 text-center rounded-[28px]">
+            <p className="text-base text-[var(--muted)] font-semibold">
+              {en.homeNoExpenses}
+            </p>
+          </Card>
+        )}
 
-          {!isLoading &&
-            pairwise.map(({ otherMember, netPaise }) => {
+        {!isLoading && pairwise.length > 0 && (
+          <div className="bg-[var(--surface-raised)] rounded-[28px] border border-[#E0D8CC] card-shadow overflow-hidden">
+            {pairwise.map(({ otherMember, netPaise }, index) => {
               const hasDebt = netPaise > 0;
               const hasCredit = netPaise < 0;
               const initialLetter = otherMember.name.charAt(0).toUpperCase();
@@ -330,91 +322,96 @@ export function HomePage() {
               }
 
               return (
-                <div
-                  key={otherMember.id}
-                  className="bg-[var(--surface-raised)] rounded-[28px] p-4 sm:p-5 border border-[#E0D8CC] card-shadow hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex flex-col gap-3"
-                >
-                  <div
-                    onClick={() => navigate(`/history?member=${otherMember.id}`)}
-                    className="cursor-pointer flex items-center justify-between gap-3"
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        navigate(`/history?member=${otherMember.id}`);
-                      }
-                    }}
-                  >
-                    {/* Left: Round Initial Badge & Name */}
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div
-                        className="w-12 h-12 rounded-full bg-[#EAF3F3] text-[var(--primary)] border border-[#CFE5E5] flex items-center justify-center text-lg font-bold shrink-0"
-                        aria-hidden="true"
-                      >
-                        {initialLetter}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate">
-                          {otherMember.name}
-                        </h3>
-                        <p className={`text-sm sm:text-base font-bold truncate ${textColor}`}>
-                          {hideAmounts && (hasDebt || hasCredit)
-                            ? hasDebt
-                              ? `You owe ${otherMember.name} ₹••••`
-                              : `${otherMember.name} owes you ₹••••`
-                            : sentence}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Right: Pill Badge / Arrow */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {hasDebt && (
-                        <span className="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-[var(--owe-bg)] text-[var(--owe)] border border-[var(--owe-border)]">
-                          {hideAmounts ? '₹ •••' : `₹${formatPaise(netPaise)}`}
-                        </span>
-                      )}
-                      {hasCredit && (
-                        <span className="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-[var(--get-bg)] text-[var(--get)] border border-[var(--get-border)]">
-                          {hideAmounts ? '₹ •••' : `+₹${formatPaise(-netPaise)}`}
-                        </span>
-                      )}
-                      {!hasDebt && !hasCredit && (
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-[var(--muted)]">
-                          Settled
-                        </span>
-                      )}
-                      <div className="text-[var(--muted)] pl-1">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Settle up pill button visible when you owe this person */}
-                  {hasDebt && (
-                    <div className="pt-0.5">
-                      <Button
-                        variant="secondary"
-                        onClick={() =>
-                          setSettleUpTarget({
-                            memberId: otherMember.id,
-                            amountPaise: netPaise,
-                          })
-                        }
-                        className="!min-h-[44px] !text-base rounded-full"
-                        aria-label={`Settle up with ${otherMember.name}`}
-                      >
-                        {en.settleTitle}
-                      </Button>
-                    </div>
+                <div key={otherMember.id}>
+                  {/* Divider between rows (not before first) */}
+                  {index > 0 && (
+                    <div className="h-px bg-[var(--border-light)] mx-4" />
                   )}
+
+                  <div className="flex flex-col gap-3 px-4 sm:px-5 py-4 sm:py-5 hover:bg-[#FAFAF8] active:bg-[#F5F2EC] transition-colors duration-150">
+                    <div
+                      onClick={() => navigate(`/history?member=${otherMember.id}`)}
+                      className="cursor-pointer flex items-center justify-between gap-3"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(`/history?member=${otherMember.id}`);
+                        }
+                      }}
+                    >
+                      {/* Left: Round Initial Badge & Name */}
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div
+                          className="w-11 h-11 rounded-full bg-[#EAF3F3] text-[var(--primary)] border border-[#CFE5E5] flex items-center justify-center text-base font-bold shrink-0"
+                          aria-hidden="true"
+                        >
+                          {initialLetter}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-base sm:text-lg font-extrabold text-[var(--text)] truncate">
+                            {otherMember.name}
+                          </h3>
+                          <p className={`text-sm font-semibold truncate ${textColor}`}>
+                            {hideAmounts && (hasDebt || hasCredit)
+                              ? hasDebt
+                                ? `You owe ${otherMember.name} ₹••••`
+                                : `${otherMember.name} owes you ₹••••`
+                              : sentence}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Amount Pill & Arrow */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {hasDebt && (
+                          <span className="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-[var(--owe-bg)] text-[var(--owe)] border border-[var(--owe-border)]">
+                            {hideAmounts ? '₹ •••' : `₹${formatPaise(netPaise)}`}
+                          </span>
+                        )}
+                        {hasCredit && (
+                          <span className="px-3 py-1 rounded-full text-xs sm:text-sm font-bold bg-[var(--get-bg)] text-[var(--get)] border border-[var(--get-border)]">
+                            {hideAmounts ? '₹ •••' : `+₹${formatPaise(-netPaise)}`}
+                          </span>
+                        )}
+                        {!hasDebt && !hasCredit && (
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-[var(--muted)]">
+                            Settled
+                          </span>
+                        )}
+                        <div className="text-[var(--muted)]">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="9 18 15 12 9 6" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Settle up button — shown inline when you owe this person */}
+                    {hasDebt && (
+                      <div>
+                        <Button
+                          variant="secondary"
+                          onClick={() =>
+                            setSettleUpTarget({
+                              memberId: otherMember.id,
+                              amountPaise: netPaise,
+                            })
+                          }
+                          className="!min-h-[44px] !text-base rounded-full"
+                          aria-label={`Settle up with ${otherMember.name}`}
+                        >
+                          {en.settleTitle}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
-        </div>
+          </div>
+        )}
       </section>
 
       {/* Modals */}

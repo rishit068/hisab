@@ -134,7 +134,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: radial-gradient(130% 90% at 50% 0%, #FFF5ED 0%, #FAF8F4 50%, #F4ECE1 100%);
+  background: linear-gradient(165deg, #DFF0F0 0%, #EEF6F5 20%, #FAF8F4 55%, #F5EDE2 85%, #F0E4D4 100%);
   background-attachment: fixed;
 }
 
