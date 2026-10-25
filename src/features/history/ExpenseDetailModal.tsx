@@ -68,7 +68,7 @@ export function ExpenseDetailModal({
             <h2 id="expense-detail-heading" className="text-2xl font-bold text-[var(--text)]">
               {expense.title}
             </h2>
-            <span className="inline-block mt-1 px-3 py-1 bg-gray-100 rounded-lg text-base font-semibold text-[var(--muted)]">
+            <span className="inline-block mt-1 px-3 py-1 bg-[var(--border)] rounded-lg text-base font-semibold text-[var(--text)]">
               {categoryName}
             </span>
           </div>
@@ -82,7 +82,7 @@ export function ExpenseDetailModal({
         </div>
 
         {/* Amount */}
-        <div className="mb-6 p-4 bg-gray-50 rounded-xl text-center">
+        <div className="mb-6 p-4 bg-[#EEF6F6] rounded-xl text-center">
           <p className="text-3xl font-bold text-[var(--primary)]">
             ₹{formatPaise(expense.amount_paise)}
           </p>
@@ -110,7 +110,7 @@ export function ExpenseDetailModal({
               return (
                 <div
                   key={s.member_id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)]"
+                  className="flex items-center justify-between p-3 rounded-xl border border-[var(--border)]"
                 >
                   <span className="text-lg font-medium text-[var(--text)]">
                     {personName}

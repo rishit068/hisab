@@ -234,10 +234,12 @@ export function HistoryPage() {
       {!loading &&
         groupedExpenses.map(([dateKey, items]) => (
           <div key={dateKey} className="space-y-3">
-            {/* Date Group Heading */}
-            <h2 className="text-lg font-bold text-[var(--muted)] px-1">
-              {formatDateHeader(dateKey)}
-            </h2>
+            {/* Date Group Heading — inline divider */}
+            <div className="flex items-center gap-3 my-2">
+              <div className="flex-1 h-px bg-[var(--border)]"/>
+              <span className="text-sm font-semibold text-[var(--muted)] whitespace-nowrap">{formatDateHeader(dateKey)}</span>
+              <div className="flex-1 h-px bg-[var(--border)]"/>
+            </div>
 
             {/* Expenses on this date */}
             <div className="space-y-2">
@@ -250,32 +252,40 @@ export function HistoryPage() {
                   <Card
                     key={exp.id}
                     onClick={() => setSelectedExpense(exp)}
-                    className="cursor-pointer hover:border-[var(--primary)] transition-colors !p-4"
+                    className={`cursor-pointer hover:border-[var(--primary)] transition-all duration-200 !p-0 overflow-hidden`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-lg font-bold text-[var(--text)]">
-                          {exp.title}
-                        </h3>
-                        <p className="text-sm font-semibold text-[var(--muted)] mt-1">
-                          {categoryName} · {en.historyPaidBy.replace('{{name}}', payerName)} · {en.historyAddedBy.replace('{{name}}', creatorName)}
-                        </p>
-                      </div>
+                    <div className="flex">
+                      {/* Left accent strip for pending items */}
+                      {exp.is_pending && (
+                        <div className="w-1 bg-amber-400 shrink-0 rounded-l-2xl" aria-hidden="true" />
+                      )}
+                      <div className="flex-1 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-lg font-bold text-[var(--text)]">
+                              {exp.title}
+                            </h3>
+                            <p className="text-sm font-semibold text-[var(--muted)] mt-1">
+                              {categoryName} · {en.historyPaidBy.replace('{{name}}', payerName)} · {en.historyAddedBy.replace('{{name}}', creatorName)}
+                            </p>
+                          </div>
 
-                      <div className="text-right shrink-0">
-                        <p className="text-xl font-bold text-[var(--text)]">
-                          ₹{formatPaise(exp.amount_paise)}
-                        </p>
-                        {exp.deleted_at && (
-                          <span className="text-sm font-bold text-[var(--owe)] block">
-                            Deleted
-                          </span>
-                        )}
-                        {exp.is_pending && (
-                          <span className="text-sm font-semibold text-[var(--owe)] bg-orange-50 px-2 py-0.5 rounded border border-orange-200 block mt-1">
-                            {en.offlineWaitingToSend}
-                          </span>
-                        )}
+                          <div className="text-right shrink-0">
+                            <p className="text-xl font-bold text-[var(--text)]">
+                              ₹{formatPaise(exp.amount_paise)}
+                            </p>
+                            {exp.deleted_at && (
+                              <span className="text-sm font-bold text-[var(--owe)] block">
+                                Deleted
+                              </span>
+                            )}
+                            {exp.is_pending && (
+                              <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full block mt-1">
+                                {en.offlineWaitingToSend}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </Card>

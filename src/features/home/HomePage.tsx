@@ -55,28 +55,28 @@ export function HomePage() {
   return (
     <div className="flex flex-col gap-6">
       {/* 1. Greeting */}
-      <h1 className="text-2xl font-bold text-[var(--text)]">
-        {en.greeting.replace('{{name}}', name)}
+      <h1 className="text-xl font-semibold text-[var(--muted)]">
+        Good to see you, {name}
       </h1>
 
-      {/* 2. Overall Summary Card */}
-      <Card className="border-2 border-[var(--border)]">
+      {/* 2. Overall Summary Hero Card */}
+      <div className="bg-[#EEF6F6] rounded-2xl p-6 card-shadow text-center">
         {overallNetPaise > 0 && (
-          <p className="text-2xl font-bold text-[var(--owe)]">
+          <p className="text-3xl font-bold text-[var(--owe)]">
             {en.homeOverallOwed.replace('{{amount}}', formatPaise(overallNetPaise))}
           </p>
         )}
         {overallNetPaise < 0 && (
-          <p className="text-2xl font-bold text-[var(--get)]">
+          <p className="text-3xl font-bold text-[var(--get)]">
             {en.homeOverallGetBack.replace('{{amount}}', formatPaise(-overallNetPaise))}
           </p>
         )}
         {overallNetPaise === 0 && (
-          <p className="text-2xl font-bold text-[var(--text)]">
+          <p className="text-3xl font-bold text-[var(--primary)]">
             {en.homeAllSettled}
           </p>
         )}
-      </Card>
+      </div>
 
       {/* 3. One Card Per Other Member */}
       <div className="space-y-4">
@@ -98,6 +98,7 @@ export function HomePage() {
           pairwise.map(({ otherMember, netPaise }) => {
             const hasDebt = netPaise > 0;
             const hasCredit = netPaise < 0;
+            const initial = otherMember.name.charAt(0).toUpperCase();
 
             let sentence = en.homeSettledWith.replace('{{name}}', otherMember.name);
             let textColor = 'text-[var(--muted)]';
@@ -117,18 +118,27 @@ export function HomePage() {
             return (
               <Card
                 key={otherMember.id}
-                className="hover:border-[var(--primary)] transition-colors flex flex-col gap-4"
+                className="hover:border-[var(--primary)] transition-all duration-200 flex flex-col gap-4"
               >
                 <div
                   onClick={() => navigate(`/history?member=${otherMember.id}`)}
-                  className="cursor-pointer"
+                  className="cursor-pointer flex items-center gap-4"
                 >
-                  <h2 className="text-xl font-bold text-[var(--text)] mb-1">
-                    {otherMember.name}
-                  </h2>
-                  <p className={`text-lg font-bold ${textColor}`}>
-                    {sentence}
-                  </p>
+                  {/* Avatar circle */}
+                  <div
+                    className="w-12 h-12 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-xl font-bold shrink-0"
+                    aria-hidden="true"
+                  >
+                    {initial}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-[var(--text)]">
+                      {otherMember.name}
+                    </h2>
+                    <p className={`text-base font-semibold ${textColor}`}>
+                      {sentence}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Settle up button visible when you owe this person */}
@@ -163,11 +173,6 @@ export function HomePage() {
           {en.homeAddExpense}
         </Button>
       </div>
-
-      {/* Updated timestamp line */}
-      <p className="text-base text-[var(--muted)] text-center">
-        {en.homeUpdatedJustNow}
-      </p>
 
       {/* Add Expense Modal */}
       {isAddExpenseOpen && member && (

@@ -175,19 +175,23 @@ export function AddExpenseModal({
       aria-labelledby="add-expense-heading"
       className="fixed inset-0 bg-black/60 z-50 overflow-y-auto flex items-end sm:items-center justify-center p-0 sm:p-4"
     >
-      <div className="bg-[var(--bg)] w-full max-w-lg rounded-t-2xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+      <div className="bg-[var(--bg)] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[var(--border)] bg-[var(--surface)]">
-          <h2 id="add-expense-heading" className="text-2xl font-bold text-[var(--text)]">
-            {en.addExpenseTitle}
-          </h2>
-          <button
-            onClick={onClose}
-            className="min-h-[44px] px-3 py-1 text-lg font-semibold text-[var(--muted)] hover:text-[var(--text)]"
-            aria-label="Close"
-          >
-            Cancel
-          </button>
+        <div className="flex flex-col items-center pt-4 pb-3 px-5 border-b border-[var(--border)] bg-[var(--surface)]">
+          {/* Drag handle — mobile sheet pattern */}
+          <div className="mx-auto w-10 h-1 bg-[var(--border)] rounded-full mb-3 sm:hidden" aria-hidden="true" />
+          <div className="w-full flex items-center justify-between">
+            <h2 id="add-expense-heading" className="text-2xl font-bold text-[var(--text)]">
+              {en.addExpenseTitle}
+            </h2>
+            <button
+              onClick={onClose}
+              className="min-h-[44px] px-3 py-1 text-lg font-semibold text-[var(--muted)] hover:text-[var(--text)]"
+              aria-label="Close"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Form Body */}
@@ -233,7 +237,7 @@ export function AddExpenseModal({
               className="w-full px-4 py-3 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl text-lg text-[var(--text)] focus:border-[var(--primary)] focus:outline-none mb-3"
             />
 
-            {/* Category selection as text buttons */}
+            {/* Category selection as pill buttons */}
             <p className="text-base font-semibold text-[var(--muted)] mb-2">
               {en.addExpenseCategory}
             </p>
@@ -245,18 +249,21 @@ export function AddExpenseModal({
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCategoryId(isSelected ? null : cat.id)}
-                    className={`min-h-[48px] px-4 py-2 rounded-xl text-base font-semibold transition-colors border-2 ${
+                    className={`min-h-[44px] px-4 py-2 rounded-full text-base font-semibold transition-all duration-200 border-2 ${
                       isSelected
                         ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
                         : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)] hover:bg-gray-50'
                     }`}
                   >
-                    {cat.name} {isSelected && '(Selected)'}
+                    {cat.name}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="h-px bg-[var(--border)]" aria-hidden="true" />
 
           {/* 3. Who paid? */}
           <div>
@@ -272,18 +279,21 @@ export function AddExpenseModal({
                     key={m.id}
                     type="button"
                     onClick={() => setPaidBy(m.id)}
-                    className={`min-h-[56px] px-3 py-2 rounded-xl text-lg font-semibold transition-colors border-2 ${
+                    className={`min-h-[56px] px-3 py-2 rounded-xl text-lg font-semibold transition-all duration-200 border-2 ${
                       isPayer
                         ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
                         : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)] hover:bg-gray-50'
                     }`}
                   >
-                    {m.name} {isPayer && '(Paid)'}
+                    {isPayer ? '✓ ' : ''}{m.name}
                   </button>
                 );
               })}
             </div>
           </div>
+
+          {/* Divider */}
+          <div className="h-px bg-[var(--border)]" aria-hidden="true" />
 
           {/* 4. Split between */}
           <div>
@@ -294,7 +304,7 @@ export function AddExpenseModal({
               <button
                 type="button"
                 onClick={() => setIsCustomSplit((prev) => !prev)}
-                className={`min-h-[44px] px-3 py-1 rounded-lg text-base font-semibold border-2 transition-colors ${
+                className={`min-h-[44px] px-3 py-1 rounded-lg text-base font-semibold border-2 transition-all duration-200 ${
                   isCustomSplit
                     ? 'bg-[var(--text)] text-white border-[var(--text)]'
                     : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)]'
@@ -312,7 +322,7 @@ export function AddExpenseModal({
                 return (
                   <div
                     key={m.id}
-                    className={`p-3 rounded-xl border-2 flex items-center justify-between gap-3 ${
+                    className={`p-3 rounded-xl border-2 flex items-center justify-between gap-3 transition-all duration-200 ${
                       isSelected
                         ? 'bg-[var(--surface)] border-[var(--primary)]'
                         : 'bg-gray-50 border-[var(--border)] opacity-60'
@@ -323,7 +333,7 @@ export function AddExpenseModal({
                       onClick={() => toggleMemberSelection(m.id)}
                       className="min-h-[44px] flex-1 text-left text-lg font-semibold text-[var(--text)]"
                     >
-                      {m.name} {isSelected ? '(Included)' : '(Excluded)'}
+                      {isSelected ? '✓ ' : ''}{m.name}
                     </button>
 
                     {isSelected && !isCustomSplit && (
@@ -371,6 +381,9 @@ export function AddExpenseModal({
               </div>
             )}
           </div>
+
+          {/* Divider */}
+          <div className="h-px bg-[var(--border)]" aria-hidden="true" />
 
           {/* 5. Date */}
           <div>
