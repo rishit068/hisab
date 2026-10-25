@@ -9,7 +9,7 @@ interface AddExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   members: Member[];
-  categories: Category[];
+  categories?: Category[];
   currentMemberId: string;
   onSave: (data: {
     title: string;
@@ -26,7 +26,6 @@ export function AddExpenseModal({
   isOpen,
   onClose,
   members,
-  categories,
   currentMemberId,
   onSave,
   onSavedWithUndo,
@@ -35,7 +34,6 @@ export function AddExpenseModal({
 
   const [amountStr, setAmountStr] = useState('');
   const [title, setTitle] = useState('');
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Eligible members for splitting expenses: only non-admin members
   const splitMembers = useMemo(() => {
@@ -151,7 +149,7 @@ export function AddExpenseModal({
         title: title.trim(),
         amount_paise: amountPaise,
         paid_by: paidBy,
-        category_id: selectedCategoryId,
+        category_id: null,
         expense_date: expenseDate,
         splits: finalSplits,
       });
@@ -166,7 +164,7 @@ export function AddExpenseModal({
   };
 
   const payerName = members.find((m) => m.id === paidBy)?.name ?? '';
-  const selectedCatName = categories.find((c) => c.id === selectedCategoryId)?.name ?? 'Expense';
+  const itemFor = title.trim() || 'this expense';
 
   return (
     <div
@@ -234,32 +232,8 @@ export function AddExpenseModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Milk & Vegetables"
-              className="w-full px-4 py-3 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl text-lg text-[var(--text)] focus:border-[var(--primary)] focus:outline-none mb-3"
+              className="w-full px-4 py-3 bg-[var(--surface)] border-2 border-[var(--border)] rounded-xl text-lg text-[var(--text)] focus:border-[var(--primary)] focus:outline-none"
             />
-
-            {/* Category selection as pill buttons */}
-            <p className="text-base font-semibold text-[var(--muted)] mb-2">
-              {en.addExpenseCategory}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => {
-                const isSelected = selectedCategoryId === cat.id;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setSelectedCategoryId(isSelected ? null : cat.id)}
-                    className={`min-h-[44px] px-4 py-2 rounded-full text-base font-semibold transition-all duration-200 border-2 ${
-                      isSelected
-                        ? 'bg-[var(--primary)] text-white border-[var(--primary)]'
-                        : 'bg-[var(--surface)] text-[var(--text)] border-[var(--border)] hover:bg-gray-50'
-                    }`}
-                  >
-                    {cat.name}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {/* Divider */}
@@ -428,7 +402,7 @@ export function AddExpenseModal({
                 ? en.addExpenseReviewEqual
                     .replace('{{name}}', payerName)
                     .replace('{{amount}}', formatPaise(amountPaise))
-                    .replace('{{category}}', selectedCatName)
+                    .replace('{{category}}', itemFor)
                     .replace('{{count}}', activeSelectedMembers.length.toString())
                     .replace(
                       '{{share}}',
@@ -437,7 +411,7 @@ export function AddExpenseModal({
                 : en.addExpenseReviewCustom
                     .replace('{{name}}', payerName)
                     .replace('{{amount}}', formatPaise(amountPaise))
-                    .replace('{{category}}', selectedCatName)}
+                    .replace('{{category}}', itemFor)}
             </p>
 
             <div className="flex flex-col gap-3">
