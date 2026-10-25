@@ -10,6 +10,7 @@ import { formatPaise } from '../../lib/money';
 import { ExpenseDetailModal } from './ExpenseDetailModal';
 import { AddExpenseModal } from '../expenses/AddExpenseModal';
 import { EditExpenseModal } from '../expenses/EditExpenseModal';
+import { CategoryIcon } from '../../components/ui/CategoryIcon';
 
 type FilterType = 'all' | 'mine' | 'month';
 
@@ -245,50 +246,58 @@ export function HistoryPage() {
             <div className="space-y-2">
               {items.map((exp) => {
                 const payerName = members.find((m) => m.id === exp.paid_by)?.name ?? 'Member';
-                const creatorName = members.find((m) => m.id === exp.created_by)?.name ?? 'Member';
                 const categoryName = exp.category?.name ?? 'Expense';
 
                 return (
-                  <Card
+                  <div
                     key={exp.id}
                     onClick={() => setSelectedExpense(exp)}
-                    className={`cursor-pointer hover:border-[var(--primary)] transition-all duration-200 !p-0 overflow-hidden`}
+                    className="bg-[var(--surface-raised)] rounded-2xl p-3.5 sm:p-4 border border-[var(--border)] card-shadow flex items-center justify-between gap-3 cursor-pointer hover:border-[var(--primary)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-150 relative overflow-hidden"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedExpense(exp);
+                      }
+                    }}
+                    aria-label={`View details for ${exp.title}`}
                   >
-                    <div className="flex">
-                      {/* Left accent strip for pending items */}
-                      {exp.is_pending && (
-                        <div className="w-1 bg-amber-400 shrink-0 rounded-l-2xl" aria-hidden="true" />
-                      )}
-                      <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h3 className="text-lg font-bold text-[var(--text)]">
-                              {exp.title}
-                            </h3>
-                            <p className="text-sm font-semibold text-[var(--muted)] mt-1">
-                              {categoryName} · {en.historyPaidBy.replace('{{name}}', payerName)} · {en.historyAddedBy.replace('{{name}}', creatorName)}
-                            </p>
-                          </div>
+                    {/* Left accent strip for pending items */}
+                    {exp.is_pending && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-400" aria-hidden="true" />
+                    )}
 
-                          <div className="text-right shrink-0">
-                            <p className="text-xl font-bold text-[var(--text)]">
-                              ₹{formatPaise(exp.amount_paise)}
-                            </p>
-                            {exp.deleted_at && (
-                              <span className="text-sm font-bold text-[var(--owe)] block">
-                                Deleted
-                              </span>
-                            )}
-                            {exp.is_pending && (
-                              <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full block mt-1">
-                                {en.offlineWaitingToSend}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                    {/* Left: Category Icon + Title & Info */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CategoryIcon name={categoryName} size={20} />
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-[var(--text)] truncate leading-tight">
+                          {exp.title}
+                        </h3>
+                        <p className="text-xs sm:text-sm font-semibold text-[var(--muted)] truncate mt-0.5">
+                          {categoryName} · Paid by {payerName}
+                        </p>
                       </div>
                     </div>
-                  </Card>
+
+                    {/* Right: Amount & Status */}
+                    <div className="text-right shrink-0">
+                      <p className="text-base sm:text-lg font-extrabold text-[var(--text)]">
+                        ₹{formatPaise(exp.amount_paise)}
+                      </p>
+                      {exp.deleted_at && (
+                        <span className="text-xs font-bold text-[var(--owe)] block mt-0.5">
+                          Deleted
+                        </span>
+                      )}
+                      {exp.is_pending && (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded block mt-0.5">
+                          {en.offlineWaitingToSend}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
             </div>

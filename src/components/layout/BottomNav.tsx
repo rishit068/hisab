@@ -38,7 +38,7 @@ const navItems = [
 export function BottomNav() {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-[var(--surface)] border-t border-[var(--border)] z-40"
+      className="fixed bottom-0 left-0 right-0 bg-[var(--surface)]/95 backdrop-blur-md border-t border-[var(--border)] z-40 float-shadow"
       aria-label="Main navigation"
     >
       <div className="flex justify-around items-center max-w-lg mx-auto min-h-[64px]">

@@ -8,13 +8,23 @@
   --bg: #FAF8F4;
   --surface: #FFFDF9;
   --surface-raised: #FFFFFF;
+  --surface-muted: #F4EFE6;
   --text: #12263A;
-  --muted: #4A5A6A;
+  --muted: #56687A;
+  --muted-light: #7E8E9E;
   --primary: #0F6B6B;
+  --primary-light: #EEF6F6;
+  --primary-hover: #0A5555;
   --owe: #A63D2F;
+  --owe-bg: #FDF3F1;
+  --owe-border: #F7D4CF;
   --get: #1B7A4B;
-  --border: #D9D4CA;
-  --shadow-card: 0 2px 8px rgba(18,38,58,0.07), 0 0 0 1px rgba(217,212,202,0.6);
+  --get-bg: #F0F8F3;
+  --get-border: #CFEAD8;
+  --border: #DED8CE;
+  --border-light: #ECE7DE;
+  --shadow-card: 0 4px 16px -2px rgba(18, 38, 58, 0.05), 0 2px 6px -1px rgba(18, 38, 58, 0.03);
+  --shadow-float: 0 12px 28px -4px rgba(18, 38, 58, 0.09), 0 4px 10px -2px rgba(18, 38, 58, 0.04);
   --radius-card: 1.25rem;
 
   font-family: 'Atkinson Hyperlegible', Inter, system-ui, sans-serif;
@@ -28,13 +38,79 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Respect OS text-size preference */
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-sheet-up {
+  animation: sheetUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 80ms; }
+.stagger-3 { animation-delay: 120ms; }
+.stagger-4 { animation-delay: 160ms; }
+.stagger-5 { animation-delay: 200ms; }
+
+/* Respect OS text-size and motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
   }
 }
 
@@ -44,8 +120,14 @@ html {
   outline-offset: 2px;
 }
 
-/* Subtle card helper */
-.card-shadow { box-shadow: var(--shadow-card); }
+/* Card helpers */
+.card-shadow {
+  box-shadow: var(--shadow-card);
+}
+
+.float-shadow {
+  box-shadow: var(--shadow-float);
+}
 
 /* Ensure minimum text size */
 body {
