@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthProvider';
 import { en } from '../../i18n/en';
 import { Card } from '../../components/ui/Card';
@@ -40,6 +40,7 @@ function formatDateHeader(dateStr: string): string {
 
 export function HistoryPage() {
   const { member } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const filterMemberId = searchParams.get('member');
 
@@ -125,13 +126,25 @@ export function HistoryPage() {
   return (
     <div className="flex flex-col gap-5">
       {/* Page Title & Add Button */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--text)]">
-          {en.historyTitle}
-        </h1>
+      <div className="flex items-center justify-between pt-1">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="w-11 h-11 rounded-full bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] flex items-center justify-center card-shadow active:scale-95 transition-all focus:outline-none"
+            aria-label="Back to home"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <h1 className="text-2xl font-bold text-[var(--text)]">
+            {en.historyTitle}
+          </h1>
+        </div>
         <button
           onClick={() => setIsAddExpenseOpen(true)}
-          className="min-h-[48px] px-4 py-2 bg-[var(--primary)] text-white text-base font-bold rounded-xl hover:bg-[#0a5555] transition-colors"
+          className="min-h-[44px] px-4 py-2 bg-[var(--primary)] text-white text-base font-bold rounded-full shadow hover:bg-[#0a5555] active:scale-95 transition-all"
           aria-label={en.homeAddExpense}
         >
           + {en.homeAddExpense}

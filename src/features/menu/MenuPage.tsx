@@ -47,9 +47,22 @@ export function MenuPage() {
 
   return (
     <div className="flex flex-col gap-6 pb-6">
-      <h1 className="text-2xl font-bold text-[var(--text)]">
-        {en.menuTitle}
-      </h1>
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="w-11 h-11 rounded-full bg-[var(--surface-raised)] border border-[var(--border)] text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] flex items-center justify-center card-shadow active:scale-95 transition-all focus:outline-none"
+          aria-label="Back to home"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <h1 className="text-2xl font-bold text-[var(--text)]">
+          {en.menuTitle}
+        </h1>
+      </div>
 
       {member && (
         <p className="text-lg text-[var(--muted)]">

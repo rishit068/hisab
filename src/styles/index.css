@@ -134,6 +134,8 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: radial-gradient(130% 90% at 50% 0%, #FFF5ED 0%, #FAF8F4 50%, #F4ECE1 100%);
+  background-attachment: fixed;
 }
 
 /* Text size settings (per device, via class on <html>) */
